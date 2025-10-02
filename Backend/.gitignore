@@ -1,0 +1,62 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
+*.pid
+
+# MySQL dump files (if you ever export/import SQL)
+*.sql
+*.sql.gz
+
+# Build/test caches
+.pytest_cache/
+.cache/
+.mypy_cache/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# VS Code/IDE
+.vscode/
+.idea/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# NLP/ML model artifacts (optional — if you download/store locally)
+*.pt
+*.bin
+*.onnx
+
+# Whispercpp compiled binaries or model folders (if using whisper.cpp)
+main
+models/
+samples/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Torch temporary files (optional)
+*.pth
+*.pkl
+
+# Optional: ignore large audio/test data (if stored in repo during dev)
+audio_samples/
+transcripts/

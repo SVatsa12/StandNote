@@ -1,0 +1,438 @@
+/* ============================================= */
+/* === Main Layout & Typography === */
+/* ============================================= */
+.dashboard-container {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    padding: 2rem 3rem;
+    background-color: #f8fafc;
+    /* A very light, clean gray background */
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dashboard-header h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.dashboard-header p {
+    font-size: 1.1rem;
+    color: #64748b;
+    margin-top: 0.5rem;
+}
+
+.timeline-section {
+    margin-bottom: 2rem;
+    /* Adds space between the timeline and the list of cards */
+}
+
+/* --- Status Indicators (Loading/Error) --- */
+.dashboard-status {
+    text-align: center;
+    padding: 4rem 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.dashboard-status.error {
+    color: #be123c;
+}
+
+/* ============================================= */
+/* === Meeting List & Foldable Cards === */
+/* ============================================= */
+.meeting-list {
+    display: grid;
+    gap: 1rem;
+    /* Space between each card */
+}
+
+.meeting-card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.meeting-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.meeting-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    cursor: pointer;
+}
+
+.meeting-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.meeting-date {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0.25rem 0 0 0;
+}
+
+.chevron-icon {
+    transition: transform 0.3s ease-in-out;
+    color: #94a3b8;
+}
+
+.chevron-icon.open {
+    transform: rotate(180deg);
+}
+
+/* --- Styles for the EXPANDED card body --- */
+/* --- Styles for the FOLDABLE card body --- */
+/* --- Styles for the FOLDABLE card body --- */
+/* --- Styles for the FOLDABLE card body --- */
+/* ======================================================= */
+/* === FINAL, SMOOTH FOLDABLE CARD ANIMATION === */
+/* ======================================================= */
+
+/* --- 1. The Container's Sliding Animation --- */
+.meeting-card-body {
+  /* This rule ONLY controls the container's height */
+  transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 0;
+  overflow: hidden;
+}
+
+.meeting-card.open .meeting-card-body {
+  max-height: 500px; /* Animate the height to a large value */
+  /* We add padding here to make space for the content to appear in */
+  padding: 1.5rem;
+}
+
+
+/* --- 2. The Content's Fading & Sliding Animation --- */
+/* This targets every direct child inside the body (h4, p, button) */
+.meeting-card-body > * {
+  /* Set the initial (hidden) state */
+  opacity: 0;
+  transform: translateY(15px); /* Start slightly lower than the final position */
+
+  /* Define how it will animate when it becomes visible */
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+/* When the card is open, we trigger the animation for the children */
+.meeting-card.open .meeting-card-body > * {
+  opacity: 1;
+  transform: translateY(0); /* Move up to the final position */
+}
+
+
+/* --- 3. The Staggered Delay (The Magic) --- */
+/* This makes each element appear one after the other. */
+.meeting-card.open .meeting-card-body h4 {
+  transition-delay: 0.15s; /* The 'Summary' title appears first */
+}
+
+.meeting-card.open .meeting-card-body p {
+  transition-delay: 0.25s; /* The summary text appears second */
+}
+
+.meeting-card.open .meeting-card-body .view-details-btn {
+  transition-delay: 0.35s; /* The button appears last */
+}
+
+.view-details-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background-color: #f1f5f9;
+    color: #334155;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.view-details-btn:hover {
+    background-color: #e2e8f0;
+}
+
+/* ============================================= */
+/* === D3 Timeline Visualization === */
+/* ============================================= */
+.timeline-wrapper {
+    width: 100%;
+    height: 150px;
+    position: relative;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.timeline-svg {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+}
+
+.timeline-svg:active {
+    cursor: grabbing;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 50%;
+    left: 40px;
+    right: 40px;
+    height: 2px;
+    background-color: #cbd5e1;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.cluster-group circle {
+    stroke: white;
+    stroke-width: 2px;
+    transition: transform 0.2s ease-in-out;
+    z-index: 2;
+}
+
+.cluster-group:hover circle {
+    transform: scale(1.4);
+}
+
+/* ============================================= */
+/* === Meeting Details Modal === */
+/* ============================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  max-width: 600px;
+  width: 90%;
+  position: relative;
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 0.5rem;
+    line-height: 0;
+}
+
+.modal-close-button:hover {
+    color: #1e293b;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+.modal-content .modal-time {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+}
+
+.modal-section {
+    margin-top: 1.5rem;
+}
+
+.modal-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.modal-section p {
+    font-size: 0.95rem;
+    color: #475569;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 200px;
+    /* Make long transcripts scrollable */
+    overflow-y: auto;
+    background-color: #f8fafc;
+    padding: 0.75rem;
+    border-radius: 6px;
+}
+
+.modal-delete-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    width: 100%;
+    padding: 0.75rem;
+    justify-content: center;
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modal-delete-button:hover {
+    background-color: #fecaca;
+}
+/* ============================================= */
+/* === Custom Confirmation Dialog (Modal-in-Modal) === */
+/* ============================================= */
+
+/* This overlay covers the content of the main modal with a frosted glass effect */
+.confirm-dialog-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(248, 250, 252, 0.8); /* Semi-transparent white */
+  backdrop-filter: blur(4px); /* This creates the blur effect */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001; /* Ensure it's on top of the modal content */
+  border-radius: 0.5rem; /* Match the parent modal's rounding */
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* This is the smaller box containing the confirmation message */
+.confirm-dialog-box {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  max-width: 400px;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.confirm-dialog-box h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.5rem 0;
+}
+
+.confirm-dialog-box p {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Container for the 'Cancel' and 'Delete' buttons */
+.confirm-dialog-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.75rem;
+}
+
+/* Base style for both buttons */
+.confirm-dialog-button {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+/* Style for the 'Cancel' button */
+.confirm-dialog-button.cancel {
+  background-color: #ffffff;
+  color: #475569;
+  border-color: #cbd5e0;
+}
+
+.confirm-dialog-button.cancel:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* Style for the 'Delete' confirmation button */
+.confirm-dialog-button.confirm {
+  background-color: #dc2626; /* A strong red */
+  color: white;
+}
+
+.confirm-dialog-button.confirm:hover {
+  background-color: #b91c1c; /* A darker red on hover */
+}
+
+/* Simple animations for appearing */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* ============================================= */
+/* === FIX FOR MODAL TEXT OVERFLOW === */
+/* ============================================= */
+
+/*
+  This new class targets the summary and transcript text inside the modal.
+*/
+.modal-text-content {
+  /* This tells the text to respect the original line breaks from the transcript. */
+  white-space: pre-wrap;
+
+  /* This is the most important rule. It tells the browser it is allowed to
+     break a very long word if it doesn't fit on one line. */
+  overflow-wrap: break-word;
+  word-wrap: break-word; /* (Legacy support) */
+  word-break: break-word;
+
+  /* Just some nice defaults for readability. */
+  color: #334155; /* A softer black (slate-700) */
+  font-size: 14px;
+  line-height: 1.6;
+}

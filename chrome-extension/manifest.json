@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "StandNote Live Transcriber",
+  "version": "8.0",
+  "description": "Live meeting transcription using tab or microphone audio.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabCapture",
+    "offscreen",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "ws://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
+    "ws://127.0.0.1:8000/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["offscreen.html", "offscreen.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["scripts/contentscript.js"]
+    }
+  ]
+}
