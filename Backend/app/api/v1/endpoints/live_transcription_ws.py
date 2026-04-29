@@ -5,7 +5,6 @@ import io
 import json
 import numpy as np
 from pydub import AudioSegment
-import whisper
 import asyncio
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter
 from typing import List, Optional
@@ -34,9 +33,8 @@ except (mysql.connector.Error, ValueError) as err:
     db_pool = None
 
 
-print("[Server] Loading Whisper model...")
-model = whisper.load_model("base")
-print("[Server] Whisper model loaded.")
+# Whisper loading removed for Gemini replacement
+import google.generativeai as genai
 
 # --- THIS IS THE CORRECTED DATABASE FUNCTION ---
 def save_results_to_db(title: str, transcript: str, summary: str, created_at: datetime):
@@ -135,15 +133,27 @@ async def handle_recording_session(recorder_websocket: WebSocket, initial_messag
                 audio_format = detect_audio_format(full_audio_buffer)
                 audio_file = io.BytesIO(full_audio_buffer)
                 audio_segment = AudioSegment.from_file(audio_file, format=audio_format).set_channels(1).set_frame_rate(16000)
-                samples = np.array(audio_segment.get_array_of_samples()).astype(np.float32)
-                audio_np = samples / (2**(audio_segment.sample_width * 8 - 1))
                 
-                print("[Recorder Task] Starting transcription...")
-                loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(None, lambda: model.transcribe(audio_np, fp16=False, language="en"))
+                print("[Recorder Task] Starting transcription with Gemini...")
+                
+                # Export audio segment to wav format in memory for Gemini
+                wav_io = io.BytesIO()
+                audio_segment.export(wav_io, format="wav")
+                wav_data = wav_io.getvalue()
+                
+                genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+                gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+                
+                response = await gemini_model.generate_content_async([
+                    "Transcribe this audio accurately. Return only the transcript text, nothing else.",
+                    {
+                        "mime_type": "audio/wav",
+                        "data": wav_data
+                    }
+                ])
                 print("[Recorder Task] Transcription finished.")
                 
-                final_transcript = result.get("text", "").strip() or "No speech was detected."
+                final_transcript = response.text.strip() or "No speech was detected."
                 final_summary = summarize_transcript(final_transcript) or "Could not generate a summary."
                 
                 # --- THIS IS THE CRITICAL FIX ---

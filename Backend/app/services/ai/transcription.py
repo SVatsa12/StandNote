@@ -15,7 +15,7 @@ async def transcribe(file: UploadFile = File(...)):
             tmp_path = tmp.name
 
         # Transcribe and get full result (text + segments)
-        result =await transcribe_audio(tmp_path)
+        result = transcribe_audio(tmp_path)
 
         # Clean up temp file
         os.remove(tmp_path)
