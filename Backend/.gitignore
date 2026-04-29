@@ -45,7 +45,9 @@ Thumbs.db
 
 # Whispercpp compiled binaries or model folders (if using whisper.cpp)
 main
+# Ignore whisper.cpp model folders at repo root, but keep app models in git
 models/
+!app/models/
 samples/
 build/
 *.exe

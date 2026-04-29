@@ -33,7 +33,8 @@ except (mysql.connector.Error, ValueError) as err:
 
 
 # Whisper loading removed for Gemini replacement
-import google.generativeai as genai
+from google import genai
+from google.genai.types import Part
 
 # --- THIS IS THE CORRECTED DATABASE FUNCTION ---
 def save_results_to_db(title: str, transcript: str, summary: str, created_at: datetime):
@@ -143,16 +144,15 @@ async def handle_recording_session(recorder_websocket: WebSocket, initial_messag
                 api_key = os.getenv("GEMINI_API_KEY")
                 if not api_key:
                     raise RuntimeError("GEMINI_API_KEY is not set")
-                genai.configure(api_key=api_key)
-                gemini_model = genai.GenerativeModel("gemini-2.0-flash")
-                
-                response = await gemini_model.generate_content_async([
-                    "Transcribe this audio accurately. Return only the transcript text, nothing else.",
-                    {
-                        "mime_type": "audio/wav",
-                        "data": wav_data
-                    }
-                ])
+                client = genai.Client(api_key=api_key)
+
+                response = await client.aio.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=[
+                        "Transcribe this audio accurately. Return only the transcript text, nothing else.",
+                        Part.from_bytes(data=wav_data, mime_type="audio/wav"),
+                    ],
+                )
                 print("[Recorder Task] Transcription finished.")
                 
                 final_transcript = response.text.strip() or "No speech was detected."

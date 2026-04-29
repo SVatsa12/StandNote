@@ -1,5 +1,6 @@
 import os
-import google.generativeai as genai
+from google import genai
+from google.genai.types import Part
 
 # Using sync def since live_transcription_service calls it synchronously
 def transcribe_audio(file_path: str) -> dict:
@@ -12,9 +13,7 @@ def transcribe_audio(file_path: str) -> dict:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise RuntimeError("GEMINI_API_KEY is not set")
-        genai.configure(api_key=api_key)
-
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        client = genai.Client(api_key=api_key)
         
         with open(file_path, "rb") as f:
             audio_data = f.read()
@@ -31,13 +30,13 @@ def transcribe_audio(file_path: str) -> dict:
         }
         mime_type = mime_type_by_ext.get(ext, "audio/wav")
         
-        response = model.generate_content([
-            "Transcribe this audio accurately. Return only the transcript text, nothing else.",
-            {
-                "mime_type": mime_type,
-                "data": audio_data
-            }
-        ])
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[
+                "Transcribe this audio accurately. Return only the transcript text, nothing else.",
+                Part.from_bytes(data=audio_data, mime_type=mime_type),
+            ],
+        )
         
         full_text = (response.text or "").strip() or "No speech was detected."
         
