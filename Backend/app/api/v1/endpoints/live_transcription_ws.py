@@ -3,7 +3,6 @@
 import os
 import io
 import json
-import numpy as np
 from pydub import AudioSegment
 import asyncio
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter
@@ -141,8 +140,11 @@ async def handle_recording_session(recorder_websocket: WebSocket, initial_messag
                 audio_segment.export(wav_io, format="wav")
                 wav_data = wav_io.getvalue()
                 
-                genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-                gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+                api_key = os.getenv("GEMINI_API_KEY")
+                if not api_key:
+                    raise RuntimeError("GEMINI_API_KEY is not set")
+                genai.configure(api_key=api_key)
+                gemini_model = genai.GenerativeModel("gemini-2.0-flash")
                 
                 response = await gemini_model.generate_content_async([
                     "Transcribe this audio accurately. Return only the transcript text, nothing else.",
