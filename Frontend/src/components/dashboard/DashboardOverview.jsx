@@ -13,9 +13,9 @@ const DashboardOverview = () => {
     const fetchDashboardData = async () => {
       try {
         const [statsRes, recentRes, weeklyRes] = await Promise.all([
-          fetch('http://127.0.0.1:8000/api/v1/meetings/stats'),
-          fetch('http://127.0.0.1:8000/api/v1/meetings/recent?limit=5'),
-          fetch('http://127.0.0.1:8000/api/v1/meetings/weekly-activity')
+          fetch('https://standnote.onrender.com/api/v1/meetings/stats'),
+          fetch('https://standnote.onrender.com/api/v1/meetings/recent?limit=5'),
+          fetch('https://standnote.onrender.com/api/v1/meetings/weekly-activity')
         ]);
         
         if (statsRes.ok) setStats(await statsRes.json());

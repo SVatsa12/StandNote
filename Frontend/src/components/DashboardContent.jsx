@@ -24,7 +24,7 @@ const DashboardContent = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/live-meeting/all');
+      const response = await fetch('https://standnote.onrender.com/api/v1/live-meeting/all');
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
       const data = await response.json();
 
@@ -48,7 +48,7 @@ const DashboardContent = () => {
 
   const handleDeleteMeeting = useCallback(async (meetingId) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/v1/live-meeting/${meetingId}`, {
+      await fetch(`https://standnote.onrender.com/api/v1/live-meeting/${meetingId}`, {
         method: 'DELETE',
       });
       setSelectedMeeting(null);

@@ -1,8 +1,8 @@
 // File: src/api/auth.js
 import axios from 'axios';
 
-const AUTH_URL = "http://127.0.0.1:8000/api/v1/auth";
-const USER_URL = "http://127.0.0.1:8000/api/v1/users";
+const AUTH_URL = "https://standnote.onrender.com/api/v1/auth";
+const USER_URL = "https://standnote.onrender.com/api/v1/users";
 
 export const loginUser = async (email, password) => {
   const formData = new URLSearchParams();

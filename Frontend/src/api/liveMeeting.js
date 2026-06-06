@@ -1,4 +1,4 @@
-const BASE_URL = "http://127.0.0.1:8000/api/v1/live-meeting";
+const BASE_URL = "https://standnote.onrender.com/api/v1/live-meeting";
 
 
 // Fetch all live meetings for a specific user

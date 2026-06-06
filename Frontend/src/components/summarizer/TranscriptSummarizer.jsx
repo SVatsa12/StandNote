@@ -29,7 +29,7 @@ const TranscriptSummarizer = () => {
 
     try {
       const res = await fetch(
-        "http://127.0.0.1:8000/api/v1/summarize/transcript",
+        "https://standnote.onrender.com/api/v1/summarize/transcript",
         {
           method: "POST",
           headers: {

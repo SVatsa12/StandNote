@@ -35,7 +35,7 @@ const SummarizeFileUploader = () => {
 
     try {
       setLoading(true);
-      const response = await fetch("http://127.0.0.1:8000/api/v1/summarize/summarize-file", {
+      const response = await fetch("https://standnote.onrender.com/api/v1/summarize/summarize-file", {
         method: "POST",
         body: formData,
       });

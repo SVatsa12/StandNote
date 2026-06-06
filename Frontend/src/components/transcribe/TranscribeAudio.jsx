@@ -42,7 +42,7 @@ const TranscribeAudio = ({ onResult }) => {
       setTranscriptText("");
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/v1/transcribe/transcribe",
+        "https://standnote.onrender.com/api/v1/transcribe/transcribe",
         {
           method: "POST",
           body: formData,

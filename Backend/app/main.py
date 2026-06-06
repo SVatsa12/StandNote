@@ -14,7 +14,7 @@ app = FastAPI(title="StandNote.AI - Smart Meeting Summarizer")
 Base.metadata.create_all(bind=engine)
 
 # CORS Configuration
-origins = ["http://localhost:5173", "http://127.0.0.1:5173","http://localhost",]
+origins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost", "https://stand-note.vercel.app"]
 
 app.add_middleware(
     CORSMiddleware,
