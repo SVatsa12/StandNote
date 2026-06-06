@@ -1,14 +1,26 @@
 import React, { useState } from "react";
 
+function cleanSummary(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/^\s*[-•]\s+/gm, '')
+    .replace(/[━─\|]+/g, '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+}
+
 const SummarizeFileUploader = () => {
   const [file, setFile] = useState(null);
-  const [summary, setSummary] = useState([]);
+  const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
-    setSummary([]);
+    setSummary("");
     setError("");
   };
 
@@ -28,15 +40,15 @@ const SummarizeFileUploader = () => {
         body: formData,
       });
 
-const data = await response.json();
+      const data = await response.json();
 
-if (!response.ok) throw new Error(data.detail || "Upload failed");
+      if (!response.ok) throw new Error(data.detail || "Upload failed");
 
-      setSummary(data.summary);
+      setSummary(typeof data.summary === 'string' ? cleanSummary(data.summary) : JSON.stringify(data.summary));
       setError("");
     } catch (err) {
       setError(err.message || "Something went wrong");
-      setSummary([]);
+      setSummary("");
     } finally {
       setLoading(false);
     }
@@ -63,14 +75,10 @@ if (!response.ok) throw new Error(data.detail || "Upload failed");
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      {summary.length > 0 && (
+      {summary && (
         <div className="mt-4 bg-gray-100 rounded p-4 max-h-96 overflow-y-auto space-y-2">
           <h3 className="font-semibold">Summary:</h3>
-          {summary.map((line, idx) => (
-            <p key={idx} className="text-sm text-gray-800">
-              • {line}
-            </p>
-          ))}
+          <p className="text-sm text-gray-800 whitespace-pre-wrap">{summary}</p>
         </div>
       )}
     </div>

@@ -1,6 +1,18 @@
 import React, { useState } from "react";
 import { ScrollText, Sparkles } from "lucide-react";
 
+function cleanSummary(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/^\s*[-•]\s+/gm, '')
+    .replace(/[━─\|]+/g, '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+}
+
 const TranscriptSummarizer = () => {
   const [transcript, setTranscript] = useState("");
   const [summary, setSummary] = useState("");
@@ -30,8 +42,11 @@ const TranscriptSummarizer = () => {
       const data = await res.json();
 
       if (res.ok) {
-        setSummary(data.summary);
-        console.log("Summary result:", data.summary);
+        const cleaned = Array.isArray(data.summary)
+          ? data.summary.map(s => cleanSummary(s)).filter(Boolean)
+          : cleanSummary(data.summary);
+        setSummary(cleaned);
+        console.log("Summary result:", cleaned);
       } else {
         console.error("Summarization failed:", data.detail || data);
         alert("Failed to summarize. Please try again.");
@@ -80,26 +95,10 @@ const TranscriptSummarizer = () => {
       </div>
 
       {/* Summary Output */}
-      {summary && (
+      {summary && typeof summary === 'string' && (
         <div className="mt-6 p-4 bg-gray-100 rounded-lg border border-gray-300 text-gray-800">
           <h3 className="text-lg font-medium mb-2">Summary:</h3>
-          <ul className="list-disc list-inside space-y-1">
-            {summary && Array.isArray(summary) && summary.length > 0 && (
-              <div className="mt-4">
-                <h2 className="text-xl font-semibold mb-2">Summary:</h2>
-                <ul className="list-disc list-inside space-y-1 text-gray-800">
-                  {summary.flatMap((point, index) =>
-                    point
-                      .split(/[.?!]\s+/)
-                      .filter(Boolean)
-                      .map((sentence, subIndex) => (
-                        <li key={`${index}-${subIndex}`}>{sentence.trim()}.</li>
-                      ))
-                  )}
-                </ul>
-              </div>
-            )}
-          </ul>
+          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{summary}</p>
         </div>
       )}
     </div>

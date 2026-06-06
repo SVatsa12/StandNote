@@ -81,6 +81,43 @@ input[type="text"] {
   background-color: #a50e0e;
 }
 
+/* Error Display */
+.error-container {
+  background: #fce8e6;
+  border: 1px solid #c5221f;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #c5221f;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.error-container p {
+  margin: 0 0 8px;
+}
+
+#error-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-secondary {
+  background-color: #fff;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  background-color: #e8f0fe;
+}
+
 #status-display {
   display: flex;
   align-items: center;

@@ -1,15 +1,23 @@
 import React from 'react';
 import { ChevronDown, FileText } from 'lucide-react';
 
-// This formatDate function is now simpler because it receives a Date object
-const formatDate = (dateObject) => {
+function cleanSummary(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/^\s*[-•]\s+/gm, '')
+    .replace(/[━─\|]+/g, '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+}
+
+function formatDate(dateObject) {
   if (!dateObject) return 'Date not available';
-  
-  // Use 'instanceof Date' for a more robust check
   if (!(dateObject instanceof Date) || isNaN(dateObject)) {
     return 'Invalid date';
   }
-
   return dateObject.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -17,7 +25,7 @@ const formatDate = (dateObject) => {
     hour: '2-digit',
     minute: '2-digit',
   });
-};
+}
 
 const FoldableMeetingCard = ({ meeting, isOpen, onToggle, onViewDetails }) => {
   return (
@@ -46,7 +54,7 @@ const FoldableMeetingCard = ({ meeting, isOpen, onToggle, onViewDetails }) => {
       */}
       <div className="meeting-card-body">
         <h4>Summary</h4>
-        <p>{meeting.summary || 'No summary was generated.'}</p>
+        <p className="whitespace-pre-wrap">{cleanSummary(meeting.summary) || 'No summary was generated.'}</p>
         <button 
           className="view-details-btn" 
           onClick={() => onViewDetails(meeting)}

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
-from app.services.ai.summarization import summarize_transcript
+from app.services.ai.summarization import summarize_transcript, clean_summary
 from app.services.ai.transcription import transcribe_audio
 import tempfile
 import os
@@ -21,8 +21,7 @@ class TranscriptInput(BaseModel):
 async def summarize(data: TranscriptInput):
     try:
         summary = summarize_transcript(data.transcript)
-        formatted_summary = [line.strip() for line in summary.split("\n") if line.strip()]
-        return {"summary": formatted_summary}
+        return {"summary": summary}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -41,18 +40,17 @@ async def summarize_audio(
             tmp.write(contents)
             tmp_path = tmp.name
 
-        # Transcribe + summarize
-        transcript = transcribe_audio(tmp_path)
-        summary = summarize_transcript(transcript)
-        formatted_summary = [line.strip() for line in summary.split("\n") if line.strip()]
+        transcript_text = transcribe_audio(tmp_path).get("text", "")
+        summary = summarize_transcript(transcript_text)
+
         os.remove(tmp_path)
 
         # Save to database
         meeting_data = {
             "platform": "custom_upload",
-            "meeting_id": str(uuid.uuid4()),  # Generate a unique ID
-            "transcript": transcript,
-            "summary": summary,
+            "meeting_id": str(uuid.uuid4()),
+            "transcript": transcript_text,
+            "summary": clean_summary(summary),
             "processed": 2
         }
 
@@ -86,8 +84,7 @@ async def summarize_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Unsupported file type")
     
     summary = summarize_transcript(text)
-    formatted_summary = [line.strip() for line in summary.split("\n") if line.strip()]
-    return {"summary": formatted_summary}
+    return {"summary": summary}
     
 
 

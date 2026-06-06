@@ -18,7 +18,6 @@ from app.database import DATABASE_URL
 
 # --- DATABASE CONNECTION SETUP ---
 try:
-    DATABASE_URL = "mysql+pymysql://root:SVatsa27!@localhost/StandNote_db"
     engine = create_engine(DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = SessionLocal()
@@ -85,18 +84,31 @@ if __name__ == "__main__":
     try:
         print("Starting database seeding process...")
         
-        # Step 1: Check that a user with ID=1 actually exists.
-        # This is required to satisfy the foreign key constraint.
+        # Step 1: Create a test user if it doesn't exist
         user_id_to_check = 1
         user = db.query(User).filter(User.id == user_id_to_check).first()
         
         if not user:
-            print(f"FATAL ERROR: User with ID {user_id_to_check} does not exist in the 'users' table.")
-            print("Please create this user before running the seeder.")
-            db.close()
-            sys.exit(1)
-
-        print(f"Verified user '{user.email}' exists. Proceeding to reset and seed meetings...")
+            print(f"User with ID {user_id_to_check} does not exist. Creating test user...")
+            from passlib.context import CryptContext
+            pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+            hashed_password = pwd_context.hash("testpassword123")
+            
+            new_user = User(
+                id=1,
+                email="test@example.com",
+                hashed_password=hashed_password,
+                name="Test User",
+                username="testuser",
+                avatar=None,
+                facebook=None,
+                twitter=None
+            )
+            db.add(new_user)
+            db.commit()
+            print(f"Created test user with email: test@example.com")
+        else:
+            print(f"Verified user '{user.email}' exists. Proceeding to reset and seed meetings...")
 
         # Step 2: Delete all existing meetings from the table to start fresh.
         num_deleted = db.query(LiveMeeting).delete()

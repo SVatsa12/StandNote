@@ -4,6 +4,18 @@
 import React, { useState } from 'react'; // <-- THIS LINE IS NOW CORRECT
 import { Trash2, X } from 'lucide-react';
 
+function cleanSummary(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/^\s*[-•]\s+/gm, '')
+    .replace(/[━─\|]+/g, '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+}
+
 const MeetingDetailsModal = ({ meeting, onClose, onDelete }) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -39,8 +51,8 @@ const MeetingDetailsModal = ({ meeting, onClose, onDelete }) => {
 
         <div className="modal-section">
           <h4>Summary</h4>
-          <p className="modal-text-content">
-            {meeting.summary || 'No summary available.'}
+          <p className="modal-text-content whitespace-pre-wrap">
+            {cleanSummary(meeting.summary) || 'No summary available.'}
           </p>
         </div>
 

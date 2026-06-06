@@ -1,5 +1,3 @@
-# livetranscription_ws.py (Complete and Corrected Version)
-
 import os
 import io
 import json
@@ -8,59 +6,38 @@ import asyncio
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter
 from typing import List, Optional
 from dotenv import load_dotenv
-import mysql.connector
-from mysql.connector import pooling
-from datetime import datetime  # <-- VERIFY THIS IMPORT IS PRESENT
+from datetime import datetime
+from sqlalchemy.orm import sessionmaker
+from groq import Groq
 
-from app.services.ai.summarization import summarize_transcript
+from app.database import engine
+from app.models.livemeeting_model import LiveMeeting
+from app.services.ai.summarization import summarize_transcript, clean_summary
 
 load_dotenv()
 router = APIRouter()
 
-# ... (Your DB_CONFIG and connection pool setup remains the same) ...
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
-    'database': os.getenv('DB_NAME')
-}
-try:
-    db_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="meeting_pool", pool_size=5, **DB_CONFIG)
-    print("[Server] MySQL connection pool created successfully.")
-except (mysql.connector.Error, ValueError) as err:
-    print(f"[Server] FATAL: Failed to create MySQL connection pool: {err}")
-    db_pool = None
+# PostgreSQL session setup
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
-# Whisper loading removed for Gemini replacement
-from google import genai
-from google.genai.types import Part
-
-# --- THIS IS THE CORRECTED DATABASE FUNCTION ---
+# --- THIS IS THE CORRECTED DATABASE FUNCTION FOR POSTGRESQL ---
 def save_results_to_db(title: str, transcript: str, summary: str, created_at: datetime):
-    if not db_pool:
-        print("[DB] Cannot save results: Database connection pool is not available.")
-        return
+    db = SessionLocal()
     try:
-        conn = db_pool.get_connection()
-        cursor = conn.cursor()
-        
-        # SQL now correctly includes the `created_at` column
-        sql = "INSERT INTO live_meetings (title, transcript, summary, created_at) VALUES (%s, %s, %s, %s)"
-        values = (title, transcript, summary, created_at)
-        
-        cursor.execute(sql, values)
-        conn.commit()
-        print(f"[DB] Successfully saved meeting '{title}' to the database. Record ID: {cursor.lastrowid}")
-    except mysql.connector.Error as err:
+        new_meeting = LiveMeeting(
+            title=title,
+            transcript=transcript,
+            summary=summary,
+            created_at=created_at
+        )
+        db.add(new_meeting)
+        db.commit()
+        print(f"[DB] Successfully saved meeting '{title}' to the database. Record ID: {new_meeting.id}")
+    except Exception as err:
         print(f"[DB] Error saving to database: {err}")
-        if 'conn' in locals() and conn.is_connected():
-            conn.rollback()
+        db.rollback()
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals() and conn.is_connected():
-            conn.close()
+        db.close()
 
 # ... (Your ConnectionManager and detect_audio_format functions remain the same) ...
 class ConnectionManager:
@@ -134,29 +111,28 @@ async def handle_recording_session(recorder_websocket: WebSocket, initial_messag
                 audio_file = io.BytesIO(full_audio_buffer)
                 audio_segment = AudioSegment.from_file(audio_file, format=audio_format).set_channels(1).set_frame_rate(16000)
                 
-                print("[Recorder Task] Starting transcription with Gemini...")
+                print("[Recorder Task] Starting transcription with Groq...")
                 
-                # Export audio segment to wav format in memory for Gemini
+                # Export audio segment to wav format in memory for Groq
                 wav_io = io.BytesIO()
                 audio_segment.export(wav_io, format="wav")
-                wav_data = wav_io.getvalue()
+                wav_io.seek(0)  # Reset file pointer to beginning
                 
-                api_key = os.getenv("GEMINI_API_KEY")
+                api_key = os.getenv("GROQ_API_KEY")
                 if not api_key:
-                    raise RuntimeError("GEMINI_API_KEY is not set")
-                client = genai.Client(api_key=api_key)
+                    raise RuntimeError("GROQ_API_KEY is not set")
+                client = Groq(api_key=api_key)
 
-                response = await client.aio.models.generate_content(
-                    model="gemini-2.0-flash",
-                    contents=[
-                        "Transcribe this audio accurately. Return only the transcript text, nothing else.",
-                        Part.from_bytes(data=wav_data, mime_type="audio/wav"),
-                    ],
+                # Groq's transcription API requires file-like object
+                response = client.audio.transcriptions.create(
+                    file=("audio.wav", wav_io, "audio/wav"),
+                    model="whisper-large-v3-turbo",
+                    language="en",
                 )
                 print("[Recorder Task] Transcription finished.")
                 
-                final_transcript = response.text.strip() or "No speech was detected."
-                final_summary = summarize_transcript(final_transcript) or "Could not generate a summary."
+                final_transcript = response.text.strip() if hasattr(response, 'text') and response.text else "No speech was detected."
+                final_summary = clean_summary(summarize_transcript(final_transcript)) or "Could not generate a summary."
                 
                 # --- THIS IS THE CRITICAL FIX ---
                 # 1. Capture the current server time.

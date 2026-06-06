@@ -1,50 +1,78 @@
 import os
-from google import genai
-from google.genai.types import Part
+from groq import Groq
+from groq import APIConnectionError, RateLimitError, AuthenticationError, APIStatusError
 
-# Using sync def since live_transcription_service calls it synchronously
 def transcribe_audio(file_path: str) -> dict:
-    print(f"[DEBUG] Transcribing file with Gemini: {file_path}")
+    print(f"[DEBUG] Transcribing file with Groq: {file_path}")
 
     if not os.path.exists(file_path):
-        raise FileNotFoundError("Audio file not found")
+        return {
+            "text": "[Transcription failed: Audio file not found.]",
+            "segments": []
+        }
 
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise RuntimeError("GEMINI_API_KEY is not set")
-        client = genai.Client(api_key=api_key)
+            return {
+                "text": "[Transcription skipped: API key not configured.]",
+                "segments": []
+            }
+        client = Groq(api_key=api_key)
         
         with open(file_path, "rb") as f:
-            audio_data = f.read()
-
-        ext = os.path.splitext(file_path)[1].lower()
-        mime_type_by_ext = {
-            ".wav": "audio/wav",
-            ".mp3": "audio/mpeg",
-            ".m4a": "audio/mp4",
-            ".aac": "audio/aac",
-            ".flac": "audio/flac",
-            ".ogg": "audio/ogg",
-            ".webm": "audio/webm",
-        }
-        mime_type = mime_type_by_ext.get(ext, "audio/wav")
+            audio_file = f
+            response = client.audio.transcriptions.create(
+                file=audio_file,
+                model="whisper-large-v3-turbo",
+                language="en",
+                response_format="verbose_json"
+            )
         
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=[
-                "Transcribe this audio accurately. Return only the transcript text, nothing else.",
-                Part.from_bytes(data=audio_data, mime_type=mime_type),
-            ],
-        )
+        full_text = response.text.strip() if hasattr(response, 'text') and response.text else "No speech was detected."
         
-        full_text = (response.text or "").strip() or "No speech was detected."
+        segments = []
+        if hasattr(response, 'segments') and response.segments:
+            for i, seg in enumerate(response.segments):
+                segments.append({
+                    "start": seg.get("start", 0) if isinstance(seg, dict) else getattr(seg, "start", 0),
+                    "end": seg.get("end", 0) if isinstance(seg, dict) else getattr(seg, "end", 0),
+                    "text": seg.get("text", "") if isinstance(seg, dict) else getattr(seg, "text", ""),
+                    "speaker": f"Speaker {i % 2 + 1}"
+                })
         
         return {
             "text": full_text,
-            "segments": [] # Gemini plain usage doesn't natively return timed speaker segments
+            "segments": segments
         }
 
+    except AuthenticationError:
+        print("[ERROR] Groq API authentication failed.")
+        return {
+            "text": "[Transcription failed: Invalid API key.]",
+            "segments": []
+        }
+    except RateLimitError:
+        print("[ERROR] Groq API rate limit exceeded.")
+        return {
+            "text": "[Transcription failed: Rate limit exceeded. Please try again later.]",
+            "segments": []
+        }
+    except APIConnectionError:
+        print("[ERROR] Groq API connection failed.")
+        return {
+            "text": "[Transcription failed: Could not connect to AI service.]",
+            "segments": []
+        }
+    except APIStatusError as e:
+        print(f"[ERROR] Groq API status error: {e.status_code} - {e.message}")
+        return {
+            "text": f"[Transcription failed: AI service error ({e.status_code}).]",
+            "segments": []
+        }
     except Exception as e:
-        print("[ERROR] Gemini transcription failed:", str(e))
-        raise RuntimeError(f"Transcription failed: {e}")
+        print(f"[ERROR] Transcription failed: {str(e)}")
+        return {
+            "text": f"[Transcription failed: {str(e)}]",
+            "segments": []
+        }

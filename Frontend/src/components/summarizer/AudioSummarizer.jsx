@@ -3,6 +3,18 @@ import { UploadCloud, PlayCircle } from "lucide-react";
 import axios from "axios";
 import MessageBubble from "./MessageBubble"; // ✅ Update path if needed
 
+function cleanSummary(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/^\s*[-•]\s+/gm, '')
+    .replace(/[━─\|]+/g, '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+}
+
 const AudioSummarizer = () => {
   const [audioFile, setAudioFile] = useState(null);
   const [summary, setSummary] = useState("");
@@ -50,7 +62,7 @@ const AudioSummarizer = () => {
       );
 
       const rawSummary = res.data?.meeting?.summary || "";
-      setSummary(rawSummary.trim());
+      setSummary(cleanSummary(rawSummary));
     } catch (error) {
       console.error("Error summarizing audio:", error);
       alert("Something went wrong while summarizing the audio.");

@@ -1,92 +1,136 @@
-// popup.js (Complete and Final Version)
+// popup.js - Requests mic permission from the popup (user gesture context),
+// then starts recording via background.
+
+const POLL_INTERVAL_MS = 500;
 
 document.addEventListener("DOMContentLoaded", () => {
-    // --- Elements ---
-    const startForm = document.getElementById("startForm");
-    const stopBtn = document.getElementById("stopBtn");
-    const meetingTitleInput = document.getElementById("meetingTitle");
-    const recordingView = document.getElementById("recording-view");
-    const idleView = document.getElementById("idle-view");
-    const errorArea = document.getElementById("error-message-area");
-    const errorText = document.getElementById("error-text");
-    const retryBtn = document.getElementById("retryBtn");
-    const openSettingsBtn = document.getElementById("openSettingsBtn");
+  const startForm = document.getElementById("startForm");
+  const stopBtn = document.getElementById("stopBtn");
+  const meetingTitleInput = document.getElementById("meetingTitle");
+  const recordingView = document.getElementById("recording-view");
+  const idleView = document.getElementById("idle-view");
+  const errorArea = document.getElementById("error-message-area");
+  const errorText = document.getElementById("error-text");
+  const errorActions = document.getElementById("error-actions");
+  const retryBtn = document.getElementById("retryBtn");
+  const openSettingsBtn = document.getElementById("openSettingsBtn");
 
-    // --- UI State Function ---
-    function setRecordingUI(isRecording) {
-        if (isRecording) {
-            idleView.style.display = "none";
-            recordingView.style.display = "block";
-        } else {
-            recordingView.style.display = "none";
-            idleView.style.display = "block";
-        }
+  function setRecordingUI(isRecording) {
+    if (isRecording) {
+      idleView.style.display = "none";
+      recordingView.style.display = "block";
+      errorArea.style.display = "none";
+    } else {
+      recordingView.style.display = "none";
+      idleView.style.display = "block";
     }
+  }
 
-    // --- State Synchronization on Popup Open ---
-    chrome.runtime.sendMessage({ action: "get_recording_state" }, (response) => {
-        if (chrome.runtime.lastError) {
-            console.warn("Could not get recording state:", chrome.runtime.lastError.message);
-            setRecordingUI(false);
-        } else if (response && response.isRecording) {
-            setRecordingUI(true);
-        } else {
-            setRecordingUI(false);
+  function loadPersistedState() {
+    chrome.storage.local.get(["isRecording", "meetingTitle", "recordingError"], (data) => {
+      if (data.recordingError) showError(data.recordingError);
+      setRecordingUI(!!data.isRecording);
+    });
+  }
+
+  function showError(errorPayload) {
+    const payload = errorPayload || {};
+    const msg = payload.userFriendlyMessage || payload.errorMessage || 'An unknown error occurred.';
+    if (errorText) errorText.textContent = msg;
+    if (errorArea) errorArea.style.display = 'block';
+    if (errorActions) errorActions.style.display = 'flex';
+
+    const isPermission = payload.errorName === 'NotAllowedError' ||
+                         payload.errorName === 'PermissionDeniedError' ||
+                         payload.rawMessage === 'Permission dismissed';
+    if (openSettingsBtn) openSettingsBtn.style.display = isPermission ? 'inline-block' : 'none';
+  }
+
+  let pollHandle = null;
+  function startPolling() {
+    stopPolling();
+    pollHandle = setInterval(() => {
+      chrome.storage.local.get(["isRecording", "recordingError"], (data) => {
+        if (data.recordingError && !data.isRecording) showError(data.recordingError);
+        if (data.isRecording) {
+          errorArea.style.display = "none";
+          setRecordingUI(true);
         }
-    });
+      });
+    }, POLL_INTERVAL_MS);
+  }
+  function stopPolling() {
+    if (pollHandle) clearInterval(pollHandle);
+    pollHandle = null;
+  }
 
-    // --- Event Listeners ---
-    startForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const title = meetingTitleInput.value.trim();
-        if (!title) {
-            alert("Please enter a meeting title.");
-            return;
-        }
-        const audioTypeEl = document.querySelector('input[name="audioType"]:checked');
-        const mode = audioTypeEl.value;
-        chrome.runtime.sendMessage({ action: "start_recording", payload: { mode, meetingTitle: title } });
-        window.close();
-    });
+  // --- Main submit: request mic from popup (user gesture), then start ---
+  startForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const title = meetingTitleInput.value.trim();
+    if (!title) { alert("Please enter a meeting title."); return; }
 
-    stopBtn.addEventListener("click", () => {
-        chrome.runtime.sendMessage({ action: "stop_recording" });
-        window.close();
-    });
+    const audioTypeEl = document.querySelector('input[name="audioType"]:checked');
+    const mode = audioTypeEl.value;
 
-    if (retryBtn) {
-        retryBtn.addEventListener("click", () => {
-            errorArea.style.display = "none";
-            startForm.dispatchEvent(new Event('submit', { cancelable: true }));
+    // For mic mode, we need to trigger the permission prompt from a user gesture.
+    // The popup's click handler IS a user gesture, so getUserMedia here will
+    // show Chrome's permission prompt. We immediately stop the stream — we just
+    // needed Chrome to register the grant and grab the deviceId.
+    if (mode === 'mic') {
+      try {
+        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const micDeviceId = tempStream.getTracks()[0]?.getSettings()?.deviceId || null;
+        tempStream.getTracks().forEach(t => t.stop());
+
+        chrome.storage.local.set({ recordingError: null, micDeviceId }, () => {
+          chrome.runtime.sendMessage({
+            action: "start_recording",
+            payload: { mode, meetingTitle: title, micDeviceId }
+          });
+          errorArea.style.display = "none";
+          startPolling();
         });
-    }
-    if (openSettingsBtn) {
-        openSettingsBtn.addEventListener("click", () => {
-            chrome.tabs.create({ url: "chrome://settings/content/microphone" });
+      } catch (permError) {
+        console.error("[Popup] Mic permission error:", permError);
+        showError({
+          errorName: permError.name || 'NotAllowedError',
+          errorMessage: 'Microphone permission denied. Please allow mic access and try again.',
+          rawMessage: permError.toString()
         });
+        return;
+      }
+    } else {
+      chrome.storage.local.set({ recordingError: null }, () => {
+        chrome.runtime.sendMessage({
+          action: "start_recording",
+          payload: { mode, meetingTitle: title }
+        });
+        errorArea.style.display = "none";
+        startPolling();
+      });
     }
-});
+  });
 
-// --- Message listener for UI-specific updates (like errors) ---
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === 'display_error_to_user') {
-        const msg = message.payload?.userFriendlyMessage || 'An unknown error occurred.';
-        const errorArea = document.getElementById("error-message-area");
-        const errorText = document.getElementById("error-text");
-        
-        if (errorArea && errorText) {
-            errorText.textContent = msg;
-            errorArea.style.display = 'block';
-        } else {
-            alert(msg);
-        }
-        
-        // Ensure UI is in the "stopped" state after an error.
-        const idleView = document.getElementById("idle-view");
-        const recordingView = document.getElementById("recording-view");
-        if(idleView && recordingView) {
-            recordingView.style.display = "none";
-            idleView.style.display = "block";
-        }
-    }
+  stopBtn.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "stop_recording" });
+    stopPolling();
+  });
+
+  if (retryBtn) {
+    retryBtn.addEventListener("click", () => {
+      chrome.storage.local.set({ recordingError: null }, () => {
+        errorArea.style.display = "none";
+        meetingTitleInput.focus();
+      });
+    });
+  }
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener("click", () => {
+      chrome.tabs.create({ url: "chrome://settings/content/microphone" });
+    });
+  }
+
+  loadPersistedState();
+  startPolling();
 });
