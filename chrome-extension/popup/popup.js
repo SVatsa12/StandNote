@@ -1,4 +1,4 @@
-// popup.js (Clean, minimal mic flow)
+// popup.js — Mic permission flow with accurate state detection
 
 document.addEventListener("DOMContentLoaded", () => {
   const startForm = document.getElementById("startForm");
@@ -10,12 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const errorText = document.getElementById("error-text");
   const retryBtn = document.getElementById("retryBtn");
   const openSettingsBtn = document.getElementById("openSettingsBtn");
-
-  // --- Load state from background ---
-  chrome.storage.local.get(["isRecording", "meetingTitle", "recordingError"], (data) => {
-    if (data.recordingError) showError(data.recordingError);
-    setRecordingUI(!!data.isRecording);
-  });
 
   function setRecordingUI(isRecording) {
     if (isRecording) {
@@ -32,11 +26,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const p = payload || {};
     if (errorText) errorText.textContent = p.errorMessage || p.userFriendlyMessage || 'Error';
     if (errorArea) errorArea.style.display = 'block';
-
     const isPerm = p.errorName === 'NotAllowedError' ||
                    p.errorName === 'PermissionDeniedError' ||
                    p.rawMessage === 'Permission dismissed';
     if (openSettingsBtn) openSettingsBtn.style.display = isPerm ? 'inline-block' : 'none';
+  }
+
+  // --- Check actual permission state via Permissions API ---
+  async function getMicPermissionState() {
+    try {
+      const result = await navigator.permissions.query({ name: 'microphone' });
+      return result.state; // 'granted', 'denied', or 'prompt'
+    } catch {
+      // Permissions API not supported or not queryable in this context
+      return 'unknown';
+    }
   }
 
   // --- Start Recording ---
@@ -47,8 +51,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const mode = document.querySelector('input[name="audioType"]:checked').value;
 
-    // For mic: trigger permission from popup (valid user gesture)
     if (mode === 'mic') {
+      const permState = await getMicPermissionState();
+
+      if (permState === 'denied') {
+        // Permission is ACTUALLY denied in Chrome — nothing we can do except guide the user
+        showError({
+          errorName: 'NotAllowedError',
+          errorMessage: 'Chrome has blocked microphone access for this extension. Click "Mic Settings" below to allow it.'
+        });
+        chrome.tabs.create({ url: 'chrome://settings/content/microphone' });
+        return;
+      }
+
+      // Permission is granted or prompt — try getUserMedia
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const deviceId = stream.getTracks()[0]?.getSettings()?.deviceId || null;
@@ -56,17 +72,15 @@ document.addEventListener("DOMContentLoaded", () => {
         kickOff(mode, title, deviceId);
       } catch (err) {
         console.error("[Popup] getUserMedia failed:", err);
-        const isDismissed = err.message === 'Permission dismissed' ||
-                            err.name === 'NotAllowedError' ||
-                            err.name === 'PermissionDeniedError';
+        const isDenied = err.name === 'NotAllowedError' ||
+                         err.name === 'PermissionDeniedError' ||
+                         err.message === 'Permission dismissed';
 
-        if (isDismissed) {
+        if (isDenied) {
           showError({
             errorName: 'NotAllowedError',
-            errorMessage: 'Chrome blocked the mic prompt. Click "Mic Settings" below, then set StandNote to "Allow".'
+            errorMessage: 'Chrome blocked microphone access. Make sure no other app is using the mic, then try again.'
           });
-          // Auto-open settings tab to help the user
-          chrome.tabs.create({ url: 'chrome://settings/content/microphone' });
         } else {
           showError({
             errorName: err.name,
@@ -106,4 +120,10 @@ document.addEventListener("DOMContentLoaded", () => {
       chrome.tabs.create({ url: "chrome://settings/content/microphone" });
     });
   }
+
+  // --- Load persisted state ---
+  chrome.storage.local.get(["isRecording", "meetingTitle", "recordingError"], (data) => {
+    if (data.recordingError) showError(data.recordingError);
+    setRecordingUI(!!data.isRecording);
+  });
 });
