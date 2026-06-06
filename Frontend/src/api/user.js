@@ -1,7 +1,7 @@
 // File: src/api/user.js
 import axios from "axios";
 
-const API_URL = "http://localhost:8000/api/v1/users";
+const API_URL = "https://standnote.onrender.com/api/v1/users";
 
 /**
  * Gets the profile data for the currently logged-in user.

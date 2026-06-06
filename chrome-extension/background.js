@@ -62,7 +62,7 @@ function connectToSocket(title) {
     };
 
     try {
-      socket = new WebSocket("ws://127.0.0.1:8000/api/v1/ws/live-meeting");
+      socket = new WebSocket("wss://standnote.onrender.com/api/v1/ws/live-meeting");
     } catch (e) {
       clearTimeout(timeout);
       socket = null;
@@ -195,7 +195,7 @@ async function setupAndStartOffscreenCapture(mode) {
 async function notifyContentScript(isRecording, meetingTitle) {
   try {
     const tabs = await chrome.tabs.query({
-      url: ["http://localhost/*", "http://127.0.0.1/*"]
+      url: ["http://localhost/*", "http://127.0.0.1/*", "*://*/*"]
     });
     for (const tab of tabs) {
       if (tab.status === 'complete') {

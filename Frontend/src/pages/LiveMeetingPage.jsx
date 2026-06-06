@@ -98,7 +98,7 @@ const LiveMeetingTranscription = () => {
     const loadInitialMeeting = async () => {
       try {
         setStatus("Loading last meeting...");
-        const response = await fetch("http://localhost:8000/api/v1/meetings/latest");
+        const response = await fetch("https://standnote.onrender.com/api/v1/meetings/latest");
         const data = await response.json();
 
         if (response.ok) {
@@ -120,7 +120,7 @@ const LiveMeetingTranscription = () => {
 
     // 2. Connect to the WebSocket
     const connectWebSocket = () => {
-      socketRef.current = new WebSocket("ws://localhost:8000/api/v1/ws/live-meeting");
+      socketRef.current = new WebSocket("wss://standnote.onrender.com/api/v1/ws/live-meeting");
       socketRef.current.onopen = () => socketRef.current.send(JSON.stringify({ role: "listener" }));
       socketRef.current.onmessage = (event) => {
         try {
