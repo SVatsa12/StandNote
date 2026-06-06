@@ -10,24 +10,14 @@ async function startCapture(payload) {
     if (payload.mode === 'tab') {
       mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          chromeMediaSource: 'tab',
-          chromeMediaSourceId: payload.streamId,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
+          mandatory: {
+            chromeMediaSource: 'tab',
+            chromeMediaSourceId: payload.streamId
+          }
         }
       });
     } else {
-      const micConstraints = {
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true
-        }
-      };
-      if (payload.micDeviceId) {
-        micConstraints.audio.deviceId = { exact: payload.micDeviceId };
-      }
-      mediaStream = await navigator.mediaDevices.getUserMedia(micConstraints);
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
 
     // Prefer a broadly-supported MIME type; fall back if needed

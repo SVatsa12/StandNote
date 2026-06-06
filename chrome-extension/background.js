@@ -108,11 +108,11 @@ async function handleStartRecording(payload) {
     return;
   }
 
-  const { mode, meetingTitle, micDeviceId } = payload;
+  const { mode, meetingTitle } = payload;
 
   try {
     await connectToSocket(meetingTitle);
-    await setupAndStartOffscreenCapture(mode, micDeviceId);
+    await setupAndStartOffscreenCapture(mode);
 
     isRecording = true;
     currentMeetingTitle = meetingTitle;
@@ -153,7 +153,7 @@ async function handleStopRecording(sendEndSignal = true, isError = false) {
   socketResolver = null;
 }
 
-async function setupAndStartOffscreenCapture(mode, micDeviceId) {
+async function setupAndStartOffscreenCapture(mode) {
   if (!(await chrome.offscreen.hasDocument())) {
     await chrome.offscreen.createDocument({
       url: 'offscreen.html',
@@ -186,7 +186,7 @@ async function setupAndStartOffscreenCapture(mode, micDeviceId) {
     const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
     messageForOffscreen = { action: 'start_capture', payload: { mode: 'tab', streamId } };
   } else {
-    messageForOffscreen = { action: 'start_capture', payload: { mode: 'mic', micDeviceId } };
+    messageForOffscreen = { action: 'start_capture', payload: { mode: 'mic' } };
   }
 
   chrome.runtime.sendMessage(messageForOffscreen);
