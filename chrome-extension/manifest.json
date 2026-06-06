@@ -18,7 +18,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["offscreen.html", "offscreen.js", "permission.html"],
+      "resources": ["offscreen.html", "offscreen.js"],
       "matches": ["<all_urls>"]
     }
   ],

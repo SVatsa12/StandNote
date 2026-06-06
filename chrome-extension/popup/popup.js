@@ -1,8 +1,4 @@
-// popup.js - Requests mic permission via a visible tab if needed,
-// then starts recording. Keeps popup open during recording.
-
-const POLL_INTERVAL_MS = 500;
-const PERMISSION_GRANTED_KEY = 'permissionGranted';
+// popup.js (Clean, minimal mic flow)
 
 document.addEventListener("DOMContentLoaded", () => {
   const startForm = document.getElementById("startForm");
@@ -12,9 +8,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const idleView = document.getElementById("idle-view");
   const errorArea = document.getElementById("error-message-area");
   const errorText = document.getElementById("error-text");
-  const errorActions = document.getElementById("error-actions");
   const retryBtn = document.getElementById("retryBtn");
   const openSettingsBtn = document.getElementById("openSettingsBtn");
+
+  // --- Load state from background ---
+  chrome.storage.local.get(["isRecording", "meetingTitle", "recordingError"], (data) => {
+    if (data.recordingError) showError(data.recordingError);
+    setRecordingUI(!!data.isRecording);
+  });
 
   function setRecordingUI(isRecording) {
     if (isRecording) {
@@ -27,149 +28,76 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function loadPersistedState() {
-    chrome.storage.local.get(["isRecording", "meetingTitle", "recordingError"], (data) => {
-      if (data.recordingError) showError(data.recordingError);
-      setRecordingUI(!!data.isRecording);
-    });
-  }
-
-  function showError(errorPayload) {
-    const payload = errorPayload || {};
-    const msg = payload.userFriendlyMessage || payload.errorMessage || 'An unknown error occurred.';
-    if (errorText) errorText.textContent = msg;
+  function showError(payload) {
+    const p = payload || {};
+    if (errorText) errorText.textContent = p.errorMessage || p.userFriendlyMessage || 'Error';
     if (errorArea) errorArea.style.display = 'block';
-    if (errorActions) errorActions.style.display = 'flex';
 
-    const isPermission = payload.errorName === 'NotAllowedError' ||
-                         payload.errorName === 'PermissionDeniedError' ||
-                         payload.rawMessage === 'Permission dismissed';
-    if (openSettingsBtn) openSettingsBtn.style.display = isPermission ? 'inline-block' : 'none';
+    const isPerm = p.errorName === 'NotAllowedError' ||
+                   p.errorName === 'PermissionDeniedError' ||
+                   p.rawMessage === 'Permission dismissed';
+    if (openSettingsBtn) openSettingsBtn.style.display = isPerm ? 'inline-block' : 'none';
   }
 
-  let pollHandle = null;
-  function startPolling() {
-    stopPolling();
-    pollHandle = setInterval(() => {
-      chrome.storage.local.get(["isRecording", "recordingError"], (data) => {
-        if (data.recordingError && !data.isRecording) showError(data.recordingError);
-        if (data.isRecording) {
-          errorArea.style.display = "none";
-          setRecordingUI(true);
-        }
-      });
-    }, POLL_INTERVAL_MS);
-  }
-  function stopPolling() {
-    if (pollHandle) clearInterval(pollHandle);
-    pollHandle = null;
-  }
-
-  // Check if we already have mic permission for this session
-  function hasMicPermission() {
-    return new Promise((resolve) => {
-      chrome.storage.local.get([PERMISSION_GRANTED_KEY], (data) => {
-        resolve(!!data[PERMISSION_GRANTED_KEY]);
-      });
-    });
-  }
-
-  // Open the permission tab and wait for it to complete
-  function requestPermissionViaTab() {
-    return new Promise((resolve) => {
-      const tabId = Date.now();
-      chrome.tabs.create({ url: 'permission.html' }, (tab) => {
-        if (!tab || !tab.id) {
-          resolve(false);
-          return;
-        }
-
-        // Listen for the tab to be closed (means user clicked Allow or Block)
-        const checkTab = setInterval(() => {
-          chrome.tabs.get(tab.id, (currentTab) => {
-            if (chrome.runtime.lastError || !currentTab) {
-              clearInterval(checkTab);
-              // Tab was closed — assume grant for better UX
-              chrome.storage.local.set({ [PERMISSION_GRANTED_KEY]: true });
-              resolve(true);
-            }
-          });
-        }, 300);
-
-        // Timeout after 60 seconds
-        setTimeout(() => {
-          clearInterval(checkTab);
-          resolve(false);
-        }, 60000);
-      });
-    });
-  }
-
-  // --- Main submit handler ---
+  // --- Start Recording ---
   startForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const title = meetingTitleInput.value.trim();
     if (!title) { alert("Please enter a meeting title."); return; }
 
-    const audioTypeEl = document.querySelector('input[name="audioType"]:checked');
-    const mode = audioTypeEl.value;
+    const mode = document.querySelector('input[name="audioType"]:checked').value;
 
+    // For mic: trigger permission from popup (valid user gesture)
     if (mode === 'mic') {
-      // If we already have permission for this session, skip the tab
-      if (!(await hasMicPermission())) {
-        errorText.textContent = 'Opening permission page...';
-        errorArea.style.display = 'block';
-        const granted = await requestPermissionViaTab();
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const deviceId = stream.getTracks()[0]?.getSettings()?.deviceId || null;
+        stream.getTracks().forEach(t => t.stop());
+        kickOff(mode, title, deviceId);
+      } catch (err) {
+        console.error("[Popup] getUserMedia failed:", err);
+        const isDismissed = err.message === 'Permission dismissed' ||
+                            err.name === 'NotAllowedError' ||
+                            err.name === 'PermissionDeniedError';
 
-        if (!granted) {
+        if (isDismissed) {
           showError({
             errorName: 'NotAllowedError',
-            errorMessage: 'Microphone permission is required. Please allow access in the permission tab and try again.'
+            errorMessage: 'Chrome blocked the mic prompt. Click "Mic Settings" below, then set StandNote to "Allow".'
           });
-          return;
+          // Auto-open settings tab to help the user
+          chrome.tabs.create({ url: 'chrome://settings/content/microphone' });
+        } else {
+          showError({
+            errorName: err.name,
+            errorMessage: err.message || 'Could not access microphone.'
+          });
         }
       }
-
-      // Also do a quick bridge getUserMedia in popup to pre-warm the permission state
-      try {
-        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const micDeviceId = tempStream.getTracks()[0]?.getSettings()?.deviceId || null;
-        tempStream.getTracks().forEach(t => t.stop());
-        await startRecording(mode, title, micDeviceId);
-      } catch (permError) {
-        console.error("[Popup] Mic permission error:", permError);
-        showError({
-          errorName: permError.name || 'NotAllowedError',
-          errorMessage: 'Microphone permission denied. Please allow mic access and try again.',
-          rawMessage: permError.toString()
-        });
-      }
     } else {
-      await startRecording(mode, title, null);
+      kickOff(mode, title, null);
     }
   });
 
-  async function startRecording(mode, title, micDeviceId) {
+  function kickOff(mode, title, micDeviceId) {
     chrome.storage.local.set({ recordingError: null, micDeviceId }, () => {
       chrome.runtime.sendMessage({
         action: "start_recording",
         payload: { mode, meetingTitle: title, micDeviceId }
       });
-      errorArea.style.display = "none";
-      startPolling();
     });
   }
 
+  // --- Stop Recording ---
   stopBtn.addEventListener("click", () => {
     chrome.runtime.sendMessage({ action: "stop_recording" });
-    stopPolling();
   });
 
+  // --- Retry / Settings buttons ---
   if (retryBtn) {
     retryBtn.addEventListener("click", () => {
       chrome.storage.local.set({ recordingError: null }, () => {
         errorArea.style.display = "none";
-        meetingTitleInput.focus();
       });
     });
   }
@@ -178,7 +106,4 @@ document.addEventListener("DOMContentLoaded", () => {
       chrome.tabs.create({ url: "chrome://settings/content/microphone" });
     });
   }
-
-  loadPersistedState();
-  startPolling();
 });
