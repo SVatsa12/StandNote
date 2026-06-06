@@ -10,6 +10,8 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 import tempfile
 import os
+from datetime import datetime, timedelta
+from sqlalchemy import func, extract
 from app.models.livemeeting_model import LiveMeeting
 
 router = APIRouter()
@@ -111,3 +113,52 @@ def get_latest_meeting(db: Session = Depends(get_db)):
             "transcript": "The transcript of the last meeting will appear here.",
             "summary": "The summary will appear here."
         }
+
+@router.get("/stats")
+def get_meeting_stats(db: Session = Depends(get_db)):
+    total_meetings = db.query(LiveMeeting).count()
+    total_summaries = db.query(LiveMeeting).filter(LiveMeeting.summary.isnot(None), LiveMeeting.summary != "").count()
+    total_transcripts = db.query(LiveMeeting).filter(LiveMeeting.transcript.isnot(None), LiveMeeting.transcript != "").count()
+    
+    # Calculate hours (fallback to a basic sum of differences, or approximate)
+    # Using an approximate 30 mins per meeting if start/end times aren't fully populated yet
+    total_hours = total_meetings * 0.5 
+
+    return {
+        "total_meetings": total_meetings,
+        "total_hours": round(total_hours, 1),
+        "total_summaries": total_summaries,
+        "total_transcripts": total_transcripts
+    }
+
+@router.get("/recent")
+def get_recent_meetings(limit: int = 5, db: Session = Depends(get_db)):
+    recent = db.query(LiveMeeting).order_by(LiveMeeting.created_at.desc()).limit(limit).all()
+    return recent
+
+@router.get("/weekly-activity")
+def get_weekly_activity(db: Session = Depends(get_db)):
+    # Calculate start of current week (Monday)
+    today = datetime.utcnow().date()
+    start_of_week = today - timedelta(days=today.weekday())
+    
+    # Query meetings for this week
+    meetings_this_week = db.query(LiveMeeting).filter(
+        func.date(LiveMeeting.created_at) >= start_of_week
+    ).all()
+    
+    # Initialize counts
+    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    counts = {day: 0 for day in days}
+    
+    for m in meetings_this_week:
+        if m.created_at:
+            day_name = m.created_at.strftime("%a")
+            if day_name in counts:
+                counts[day_name] += 1
+                
+    result = [{"day": day, "count": counts[day]} for day in days]
+    
+    # Optional: if it's weekday only requested, we can slice it
+    # result = result[:5] # Mon-Fri
+    return result

@@ -2,22 +2,23 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, PerspectiveCamera } from '@react-three/drei';
 import { Suspense } from 'react';
-import FloatingDocuments from './FloatingDocuments';
+import AICore from './AICore';
 import WaveformVisualization from './WaveformVisualization';
 
 function Lights() {
   return (
     <>
-      <ambientLight intensity={0.4} />
+      <ambientLight intensity={0.2} />
       <spotLight
         position={[10, 10, 10]}
         angle={0.15}
         penumbra={1}
-        intensity={1}
+        intensity={2}
+        color="#818CF8"
         castShadow
       />
-      <pointLight position={[-10, -10, -10]} intensity={0.5} color="#818CF8" />
-      <pointLight position={[10, 5, 5]} intensity={0.5} color="#F59E0B" />
+      <pointLight position={[-10, -10, -10]} intensity={1} color="#4F46E5" />
+      <pointLight position={[10, 5, 5]} intensity={1} color="#06B6D4" />
     </>
   );
 }
@@ -38,7 +39,7 @@ function Scene3DContent() {
       <Lights />
       
       {/* Main 3D Objects */}
-      <FloatingDocuments />
+      <AICore />
       <WaveformVisualization />
       
       {/* Ground Shadows */}

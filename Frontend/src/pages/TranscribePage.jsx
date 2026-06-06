@@ -25,7 +25,13 @@ const TranscribePage = () => {
   }, [transcriptSegments]);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="relative min-h-screen bg-[#f8faff] text-slate-800 overflow-hidden">
+      {/* Soft Pastel Background Blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-300/40 rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="absolute bottom-[-10%] right-[10%] w-[50%] h-[50%] bg-blue-300/40 rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-violet-200/50 rounded-full blur-[120px] pointer-events-none z-0"></div>
+
+      <div className="relative z-10 p-6 max-w-4xl mx-auto">
       <div className="w-full text-center">
         <h2 className="text-4xl font-extrabold text-gray-800 mb-8">
           Audio Transcription
@@ -48,6 +54,7 @@ const TranscribePage = () => {
           Download Transcript
         </button>
       )}
+      </div>
     </div>
   );
 };

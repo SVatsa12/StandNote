@@ -64,10 +64,15 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-      <div className="flex flex-col md:flex-row gap-8">
+    <div className="relative min-h-screen bg-[#f8faff] text-slate-800 overflow-hidden flex items-center justify-center px-4 py-12">
+      {/* Soft Pastel Background Blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-300/40 rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="absolute bottom-[-10%] right-[10%] w-[50%] h-[50%] bg-blue-300/40 rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-violet-200/50 rounded-full blur-[120px] pointer-events-none z-0"></div>
+
+      <div className="relative z-10 flex flex-col md:flex-row gap-8 w-full max-w-5xl justify-center">
         {/* Left Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col items-center w-full md:w-80">
+        <div className="backdrop-blur-2xl bg-white/60 rounded-2xl shadow-xl shadow-purple-900/5 border border-white/60 p-8 flex flex-col items-center w-full md:w-80">
           <div className="w-32 h-32 rounded-full bg-gray-200 mb-4 overflow-hidden flex items-center justify-center">
             {form.avatar ? (
               <img
@@ -79,25 +84,25 @@ const Profile = () => {
               <div className="text-sm text-gray-400">No avatar</div>
             )}
           </div>
-          <h2 className="text-xl font-bold mb-1">{form.fullName}</h2>
-          <p className="text-gray-500 mb-4">@{form.username}</p>
-          <button className="bg-red-500 text-white px-4 py-2 rounded mb-4 hover:bg-red-600">
+          <h2 className="text-xl font-bold mb-1 text-slate-900">{form.fullName}</h2>
+          <p className="text-slate-500 mb-4">@{form.username}</p>
+          <button className="bg-purple-600 text-white px-4 py-2 rounded mb-4 hover:bg-purple-700 transition">
             Upload New Photo
           </button>
-          <div className="text-xs text-gray-500 text-center mb-2">
+          <div className="text-xs text-slate-500 text-center mb-2">
             Upload a new avatar. Larger image will be resized automatically.
             <br />
             Maximum upload size is 1 MB
           </div>
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-slate-400">
             Member Since:{" "}
-            <span className="font-semibold">{form.memberSince}</span>
+            <span className="font-semibold text-slate-500">{form.memberSince}</span>
           </div>
         </div>
 
         {/* Right Card */}
         <form
-          className="bg-white rounded-2xl shadow-lg p-8 w-full md:w-[500px] space-y-6"
+          className="backdrop-blur-2xl bg-white/60 rounded-2xl shadow-xl shadow-purple-900/5 border border-white/60 p-8 w-full md:w-[500px] space-y-6"
           onSubmit={handleUpdate}
         >
           <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>

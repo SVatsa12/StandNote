@@ -173,7 +173,13 @@ const LiveMeetingTranscription = () => {
   const hasContent = transcript && !transcript.startsWith("The transcript will appear here");
 
   return (
-    <div className="live-meeting-wrapper">
+    <div className="live-meeting-wrapper relative min-h-screen bg-[#f8faff] text-slate-800 overflow-hidden">
+      {/* Soft Pastel Background Blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-300/40 rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="absolute bottom-[-10%] right-[10%] w-[50%] h-[50%] bg-blue-300/40 rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-violet-200/50 rounded-full blur-[120px] pointer-events-none z-0"></div>
+
+      <div className="relative z-10 w-full h-full flex flex-col max-w-7xl mx-auto">
       <header className="live-meeting-header">
         <h2><Mic /> Live Meeting Monitor</h2>
         <div className="header-controls">
@@ -198,7 +204,7 @@ const LiveMeetingTranscription = () => {
       </div>
 
       <main className="content-grid">
-        <div className="styled-card">
+        <div className="styled-card bg-white/60 backdrop-blur-2xl border-white/60 shadow-xl shadow-purple-900/5 rounded-xl">
           <h3><FileText size={20} /> Live Transcript</h3>
           <div ref={transcriptContainerRef} className="card-content">
             <div className="scrollable-inner">
@@ -207,7 +213,7 @@ const LiveMeetingTranscription = () => {
           </div>
         </div>
         
-        <div className="styled-card">
+        <div className="styled-card bg-white/60 backdrop-blur-2xl border-white/60 shadow-xl shadow-purple-900/5 rounded-xl">
           <h3><Brain size={20} /> Live Summary</h3>
           <div ref={summaryContainerRef} className="card-content">
             <div className="scrollable-inner">
@@ -216,6 +222,7 @@ const LiveMeetingTranscription = () => {
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 };

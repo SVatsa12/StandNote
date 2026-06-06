@@ -94,11 +94,21 @@ const TimelineView = ({
       .on("mouseout", onMouseOut)
       .append("circle")
       .attr("r", d => d.length > 1 ? 12 : 8)
-      .attr("fill", d => d.length > 1 ? '#845ec2' : '#4f46e5');
+      .attr("fill", d => d.length > 1 ? '#9333ea' : '#7c3aed')
+      .attr("stroke", "rgba(255,255,255,0.8)")
+      .attr("stroke-width", "2")
+      .style("transition", "transform 0.2s ease-in-out");
       
     // Draw X-axis
     const xAxis = d3.axisBottom(xScale);
-    xAxisG.call(xAxis).selectAll("text").style("text-anchor", "end").attr("transform", "rotate(-45)");
+    const axisNode = xAxisG.call(xAxis);
+    axisNode.selectAll("text")
+      .style("text-anchor", "end")
+      .attr("transform", "rotate(-45)")
+      .style("fill", "#64748b")
+      .style("font-size", "11px");
+    axisNode.selectAll("path").style("stroke", "#cbd5e1");
+    axisNode.selectAll("line").style("stroke", "#cbd5e1");
 
     // D3 Zoom handling
     const handleZoom = (event) => {
@@ -110,9 +120,9 @@ const TimelineView = ({
   }, [meetings, dimensions, currentZoomState, onMeetingHover, onMeetingClick, onMouseOut]);
 
   return (
-    <div ref={wrapperRef} className="timeline-wrapper">
-      <svg ref={svgRef} className="timeline-svg" />
-      <div className="timeline-line"></div>
+    <div ref={wrapperRef} className="w-full h-[150px] relative bg-white/60 backdrop-blur-2xl border border-white/60 shadow-xl shadow-purple-900/5 rounded-xl overflow-hidden group">
+      <svg ref={svgRef} className="w-full h-full cursor-grab active:cursor-grabbing relative z-10" />
+      <div className="absolute top-1/2 left-10 right-10 h-[2px] bg-slate-200 z-0 pointer-events-none"></div>
     </div>
   );
 };

@@ -6,13 +6,14 @@ const SummarizationPage = () => {
   const [activeTab, setActiveTab] = useState("transcript");
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-[#f0f4ff] to-[#e0e7ff] px-4 py-12">
-      {/* Decorative Blobs */}
-      <div className="absolute top-[-80px] left-[-80px] w-[250px] h-[250px] bg-indigo-300 opacity-30 rounded-full blur-2xl animate-pulse z-0" />
-      <div className="absolute bottom-[-80px] right-[-80px] w-[250px] h-[250px] bg-purple-300 opacity-30 rounded-full blur-2xl animate-pulse z-0" />
+    <div className="relative min-h-screen bg-[#f8faff] text-slate-800 overflow-hidden px-4 py-12">
+      {/* Soft Pastel Background Blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-300/40 rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="absolute bottom-[-10%] right-[10%] w-[50%] h-[50%] bg-blue-300/40 rounded-full blur-[140px] pointer-events-none z-0"></div>
+      <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-violet-200/50 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-5xl mx-auto backdrop-blur-md bg-white/30 rounded-2xl shadow-xl border border-white/20 p-8">
+      <div className="relative z-10 max-w-5xl mx-auto backdrop-blur-2xl bg-white/60 rounded-2xl shadow-xl shadow-purple-900/5 border border-white/60 p-8">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-10">
           Smart Summarizer
         </h1>

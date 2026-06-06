@@ -59,9 +59,9 @@ const Sidebar = ({ onDashboardClick }) => {
     <>
       <style>{`
         .pro-sidebar {
-          background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%) !important;
-          box-shadow: 4px 0 24px rgba(139, 92, 246, 0.15);
-          border-right: 1px solid #c4b5fd;
+          background: linear-gradient(180deg, #111827 0%, #030712 100%) !important;
+          box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+          border-right: 1px solid #1f2937;
         }
         
         .pro-sidebar > .pro-sidebar-inner {
@@ -89,30 +89,30 @@ const Sidebar = ({ onDashboardClick }) => {
         }
         
         .pro-sidebar .pro-menu-item:hover {
-          background: rgba(139, 92, 246, 0.08) !important;
+          background: rgba(255, 255, 255, 0.05) !important;
           transform: translateX(4px);
         }
         
         .pro-sidebar .pro-menu-item.active {
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(167, 139, 250, 0.1)) !important;
-          border-left: 3px solid #8b5cf6;
-          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.1)) !important;
+          border-left: 3px solid #3b82f6;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
         }
         
         .pro-sidebar .pro-inner-item {
           padding: 12px 20px !important;
-          color: #6b21a8 !important;
+          color: #9ca3af !important;
           font-weight: 500;
           font-size: 0.95rem;
         }
         
         .pro-sidebar .pro-menu-item.active .pro-inner-item {
-          color: #6b21a8 !important;
+          color: #e5e7eb !important;
           font-weight: 600;
         }
         
         .pro-sidebar .pro-icon-wrapper {
-          background: rgba(139, 92, 246, 0.1) !important;
+          background: rgba(255, 255, 255, 0.05) !important;
           border-radius: 10px;
           padding: 8px;
           margin-right: 12px;
@@ -120,26 +120,26 @@ const Sidebar = ({ onDashboardClick }) => {
         }
         
         .pro-sidebar .pro-menu-item:hover .pro-icon-wrapper {
-          background: rgba(139, 92, 246, 0.2) !important;
+          background: rgba(255, 255, 255, 0.1) !important;
           transform: scale(1.1);
         }
         
         .pro-sidebar .pro-menu-item.active .pro-icon-wrapper {
-          background: rgba(139, 92, 246, 0.25) !important;
+          background: rgba(59, 130, 246, 0.2) !important;
         }
         
         .pro-sidebar .pro-icon {
-          color: #8b5cf6 !important;
+          color: #6b7280 !important;
           font-size: 1.1rem;
         }
         
         .pro-sidebar .pro-menu-item.active .pro-icon {
-          color: #7c3aed !important;
+          color: #60a5fa !important;
         }
         
         .logout-item {
           margin-top: auto !important;
-          border-top: 1px solid #c4b5fd;
+          border-top: 1px solid #1f2937;
           padding-top: 12px !important;
         }
         
@@ -161,8 +161,8 @@ const Sidebar = ({ onDashboardClick }) => {
         
         .sidebar-header-custom {
           padding: 24px;
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(167, 139, 250, 0.08));
-          border-bottom: 1px solid #c4b5fd;
+          background: linear-gradient(135deg, rgba(17, 24, 39, 0.8), rgba(3, 7, 18, 0.8));
+          border-bottom: 1px solid #1f2937;
           position: relative;
           overflow: hidden;
         }
@@ -174,20 +174,20 @@ const Sidebar = ({ onDashboardClick }) => {
           left: 0;
           right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, #8b5cf6, transparent);
+          background: linear-gradient(90deg, transparent, #3b82f6, transparent);
         }
         
         .sidebar-logo {
           font-size: 1.4rem;
           font-weight: 700;
-          color: #6b21a8;
+          color: #e5e7eb;
           text-align: center;
           letter-spacing: 0.5px;
         }
         
         .sidebar-logo-subtitle {
           font-size: 0.75rem;
-          color: #a78bfa;
+          color: #60a5fa;
           text-align: center;
           margin-top: 4px;
           font-weight: 500;
@@ -200,9 +200,9 @@ const Sidebar = ({ onDashboardClick }) => {
         style={{ 
           height: "100vh", 
           position: "fixed",
-          background: "linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%)",
-          boxShadow: "4px 0 24px rgba(139, 92, 246, 0.15)",
-          borderRight: "1px solid #c4b5fd"
+          background: "linear-gradient(180deg, #111827 0%, #030712 100%)",
+          boxShadow: "4px 0 24px rgba(0, 0, 0, 0.5)",
+          borderRight: "1px solid #1f2937"
         }}
       >
         <SidebarHeader>
