@@ -48,7 +48,7 @@ const TranscribePage = () => {
 
       {transcriptText && (
         <button
-          onClick={() => downloadTranscript(transcriptText)}
+          onClick={() => downloadTranscript(transcriptSegments)}
           className="mt-6 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
         >
           Download Transcript
